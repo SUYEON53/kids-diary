@@ -272,13 +272,13 @@ function DiaryScreen({ dateKey, entry, settings, onBack, onSave, onDelete }) {
             contents: [{
               parts: [{
                 text: `${ageLabel} 일기 내용을 바탕으로 ${styleLabel}의 따뜻하고 귀여운 그림을 SVG로 만들어줘.
-                일기 내용: "${diaryText || "오늘 즐거웠어요"}"
-                규칙:
-                - SVG 태그만 반환 (다른 설명 없이)
-                - viewBox="0 0 300 300" width="300" height="300"
-                - 단순하고 심플하게 (복잡한 그라디언트, 필터 없이)
-                - 반드시 </svg>로 닫을 것
-                - 100줄 이내로`
+일기 내용: "${diaryText || "오늘 즐거웠어요"}"
+규칙:
+- SVG 태그만 반환 (다른 설명 없이, 마크다운 코드블록 없이)
+- viewBox="0 0 300 300" width="300" height="300"
+- 단순하고 심플하게 (그라디언트, 필터 최소화)
+- 반드시 </svg>로 닫을 것
+- 50줄 이내로`
               }]
             }],
             generationConfig: { maxOutputTokens: 8192 },
@@ -286,18 +286,14 @@ function DiaryScreen({ dateKey, entry, settings, onBack, onSave, onDelete }) {
         }
       );
       const geminiData = await geminiRes.json();
-      console.log("Gemini 응답:", JSON.stringify(geminiData));
       if (geminiData.error) {
         setError(`Gemini 오류: ${geminiData.error.message}`);
         setLoading(false);
         return;
       }
-      
       const rawText = (geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "")
-        .replace(/```svg\n?|```xml\n?|```\n?/gi, "")
+        .replace(/```svg\n?|```xml\n?|```html\n?|```\n?/gi, "")
         .trim();
-
-      // SVG 끝이 잘릴 경우 강제로 닫기
       const svgStart = rawText.indexOf('<svg');
       let svgContent = svgStart !== -1 ? rawText.slice(svgStart) : null;
       if (svgContent && !svgContent.includes('</svg>')) {
@@ -305,7 +301,6 @@ function DiaryScreen({ dateKey, entry, settings, onBack, onSave, onDelete }) {
       }
       setGeneratedImg(svgContent);
       if (!svgContent) setError(`SVG 추출 실패. 응답: ${rawText.slice(0, 80)}`);
-
     } catch (e) {
       setError("오류가 발생했어요: " + e.message);
     }
