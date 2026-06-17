@@ -292,8 +292,9 @@ SVG 코드만 반환해줘. 다른 설명 없이 SVG 태그만. viewBox="0 0 300
       console.log("rawText:", rawText.slice(0, 200));
       // 마크다운 코드블록 제거 후 SVG 추출
       const svgStart = rawText.indexOf('<svg');
-      const svgEnd = rawText.lastIndexOf('</svg>');
-      const svgContent = svgStart !== -1 && svgEnd !== -1 ? rawText.slice(svgStart, svgEnd + 6) : null;
+      const svgEnd = rawText.lastIndexOf('</svg>') + 6;
+      const svgContent = svgStart !== -1 && svgEnd > 6 ? rawText.slice(svgStart, svgEnd) : null;
+      console.log('svgStart:', svgStart, 'svgEnd:', svgEnd, 'raw length:', rawText.length);
       setGeneratedImg(svgContent);
       if (!svgContent) setError(`SVG 추출 실패. 응답: ${rawText.slice(0, 80)}`);
     } catch (e) {
