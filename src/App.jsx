@@ -264,7 +264,7 @@ function DiaryScreen({ dateKey, entry, settings, onBack, onSave, onDelete }) {
 
       // Step 2: Gemini로 SVG 그림 생성
       const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
