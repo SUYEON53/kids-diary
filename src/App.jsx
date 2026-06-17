@@ -292,18 +292,20 @@ function DiaryScreen({ dateKey, entry, settings, onBack, onSave, onDelete }) {
         setLoading(false);
         return;
       }
-      const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      console.log("rawText:", rawText.slice(0, 200));
-      console.log('</svg> 포함여부:', rawText.includes('</svg>'), rawText.includes('<\\/svg>'));
-      console.log('rawText 끝부분:', rawText.slice(-100));
-      // 마크다운 코드블록 제거 후 SVG 추출
+      
+      const rawText = (geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "")
+        .replace(/```svg\n?|```xml\n?|```\n?/gi, "")
+        .trim();
+
+      // SVG 끝이 잘릴 경우 강제로 닫기
       const svgStart = rawText.indexOf('<svg');
-      const svgEnd = rawText.lastIndexOf('</svg>') + 6;
-      const svgContent = svgStart !== -1 && svgEnd > 6 ? rawText.slice(svgStart, svgEnd) : null;
-      console.log('svgStart:', svgStart, 'svgEnd:', svgEnd, 'raw length:', rawText.length);
+      let svgContent = svgStart !== -1 ? rawText.slice(svgStart) : null;
+      if (svgContent && !svgContent.includes('</svg>')) {
+        svgContent = svgContent + '</svg>';
+      }
       setGeneratedImg(svgContent);
       if (!svgContent) setError(`SVG 추출 실패. 응답: ${rawText.slice(0, 80)}`);
-      console.log('svgContent 앞부분:', svgContent?.slice(0, 50));
+
     } catch (e) {
       setError("오류가 발생했어요: " + e.message);
     }
