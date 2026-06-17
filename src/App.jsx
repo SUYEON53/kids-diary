@@ -272,9 +272,13 @@ function DiaryScreen({ dateKey, entry, settings, onBack, onSave, onDelete }) {
             contents: [{
               parts: [{
                 text: `${ageLabel} 일기 내용을 바탕으로 ${styleLabel}의 따뜻하고 귀여운 그림을 SVG로 만들어줘.
-일기 내용: "${diaryText || "오늘 즐거웠어요"}"
-SVG 코드만 반환해줘. 다른 설명 없이 SVG 태그만. viewBox="0 0 300 300" width="300" height="300" 사용.
-밝고 따뜻한 색상, 단순하고 귀여운 일러스트 스타일.`
+                일기 내용: "${diaryText || "오늘 즐거웠어요"}"
+                규칙:
+                - SVG 태그만 반환 (다른 설명 없이)
+                - viewBox="0 0 300 300" width="300" height="300"
+                - 단순하고 심플하게 (복잡한 그라디언트, 필터 없이)
+                - 반드시 </svg>로 닫을 것
+                - 100줄 이내로`
               }]
             }],
             generationConfig: { maxOutputTokens: 8192 },
