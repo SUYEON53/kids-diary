@@ -277,7 +277,7 @@ SVG 코드만 반환해줘. 다른 설명 없이 SVG 태그만. viewBox="0 0 300
 밝고 따뜻한 색상, 단순하고 귀여운 일러스트 스타일.`
               }]
             }],
-            generationConfig: { maxOutputTokens: 1000 },
+            generationConfig: { maxOutputTokens: 8192 },
           }),
         }
       );
