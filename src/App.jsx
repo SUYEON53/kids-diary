@@ -291,6 +291,7 @@ SVG 코드만 반환해줘. 다른 설명 없이 SVG 태그만. viewBox="0 0 300
       const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
       console.log("rawText:", rawText.slice(0, 200));
       console.log('</svg> 포함여부:', rawText.includes('</svg>'), rawText.includes('<\\/svg>'));
+      console.log('rawText 끝부분:', rawText.slice(-100));
       // 마크다운 코드블록 제거 후 SVG 추출
       const svgStart = rawText.indexOf('<svg');
       const svgEnd = rawText.lastIndexOf('</svg>') + 6;
