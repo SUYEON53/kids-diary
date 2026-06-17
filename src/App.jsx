@@ -297,6 +297,7 @@ SVG 코드만 반환해줘. 다른 설명 없이 SVG 태그만. viewBox="0 0 300
       console.log('svgStart:', svgStart, 'svgEnd:', svgEnd, 'raw length:', rawText.length);
       setGeneratedImg(svgContent);
       if (!svgContent) setError(`SVG 추출 실패. 응답: ${rawText.slice(0, 80)}`);
+      console.log('svgContent 앞부분:', svgContent?.slice(0, 50));
     } catch (e) {
       setError("오류가 발생했어요: " + e.message);
     }
