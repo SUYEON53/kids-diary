@@ -291,9 +291,11 @@ SVG 코드만 반환해줘. 다른 설명 없이 SVG 태그만. viewBox="0 0 300
       const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
       console.log("rawText:", rawText.slice(0, 200));
       // 마크다운 코드블록 제거 후 SVG 추출
-      const svgMatch = rawText.match(/<svg[\s\S]*?<\/svg>/i);
-      setGeneratedImg(svgMatch ? svgMatch[0] : null);
-      if (!svgMatch) setError(`SVG 추출 실패. 응답: ${rawText.slice(0, 80)}`);
+      const svgStart = rawText.indexOf('<svg');
+      const svgEnd = rawText.lastIndexOf('</svg>');
+      const svgContent = svgStart !== -1 && svgEnd !== -1 ? rawText.slice(svgStart, svgEnd + 6) : null;
+      setGeneratedImg(svgContent);
+      if (!svgContent) setError(`SVG 추출 실패. 응답: ${rawText.slice(0, 80)}`);
     } catch (e) {
       setError("오류가 발생했어요: " + e.message);
     }
