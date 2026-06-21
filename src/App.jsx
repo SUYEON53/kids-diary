@@ -236,56 +236,39 @@ function DiaryScreen({ dateKey, entry, settings, onBack, onSave, onDelete }) {
     setLoading(true);
     setError(null);
     try {
-      const VISION_KEY = import.meta.env.VITE_VISION_API_KEY;
       const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY;
       const styleLabel = styleLabels[settings.style] || "수채화 스타일";
       const ageLabel = settings.age ? `${settings.age}세 아이가 쓴` : "아이가 쓴";
 
-      // Step 1: Google Vision으로 손글씨 인식 + Gemini로 1줄 요약
+      // Step 1: Gemini로 손글씨 인식 + 1줄 요약
       let diaryText = text;
       if (photo && !text) {
-        const visionRes = await fetch(
-          `https://vision.googleapis.com/v1/images:annotate?key=${VISION_KEY}`,
+        const extractRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              requests: [{
-                image: { content: photo.split(",")[1] },
-                features: [{ type: "TEXT_DETECTION", maxResults: 1 }],
+              contents: [{
+                parts: [
+                  {
+                    inline_data: {
+                      mime_type: "image/jpeg",
+                      data: photo.split(",")[1],
+                    }
+                  },
+                  {
+                    text: `이 사진에서 아이가 쓴 글씨나 일기 내용을 읽어서 한 문장으로 따뜻하게 요약해줘. 반말로, 이모지 1개 포함해서. 한 문장만 반환해줘.`
+                  }
+                ]
               }],
+              generationConfig: { maxOutputTokens: 150 },
             }),
           }
         );
-        const visionData = await visionRes.json();
-        console.log("Vision 응답:", JSON.stringify(visionData).slice(0, 200));
-        const rawVisionText = visionData.responses?.[0]?.fullTextAnnotation?.text || "";
-        console.log("Vision 텍스트:", rawVisionText.slice(0, 100));
-
-        if (rawVisionText) {
-          // Gemini로 1줄 요약
-          const summaryRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [{
-                  parts: [{
-                    text: `아이가 쓴 일기 내용을 한 문장으로 따뜻하게 요약해줘. 반말로, 이모지 1개 포함해서.
-일기 내용: "${rawVisionText}"
-한 문장만 반환해줘.`
-                  }]
-                }],
-                generationConfig: { maxOutputTokens: 100 },
-              }),
-            }
-          );
-          const summaryData = await summaryRes.json();
-          diaryText = summaryData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || rawVisionText;
-        } else {
-          diaryText = rawVisionText;
-        }
+        const extractData = await extractRes.json();
+        console.log("Gemini 요약 응답:", JSON.stringify(extractData).slice(0, 200));
+        diaryText = extractData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
         setText(diaryText);
       }
 
