@@ -258,7 +258,9 @@ function DiaryScreen({ dateKey, entry, settings, onBack, onSave, onDelete }) {
           }
         );
         const visionData = await visionRes.json();
+        console.log("Vision 응답:", JSON.stringify(visionData).slice(0, 200));
         const rawVisionText = visionData.responses?.[0]?.fullTextAnnotation?.text || "";
+        console.log("Vision 텍스트:", rawVisionText.slice(0, 100));
 
         if (rawVisionText) {
           // Gemini로 1줄 요약
