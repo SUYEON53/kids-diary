@@ -241,7 +241,7 @@ function DiaryScreen({ dateKey, entry, settings, onBack, onSave, onDelete }) {
       const styleLabel = styleLabels[settings.style] || "수채화 스타일";
       const ageLabel = settings.age ? `${settings.age}세 아이가 쓴` : "아이가 쓴";
 
-      // Step 1: Google Vision으로 손글씨 인식
+      // Step 1: Google Vision으로 손글씨 인식 + Gemini로 1줄 요약
       let diaryText = text;
       if (photo && !text) {
         const visionRes = await fetch(
@@ -258,7 +258,32 @@ function DiaryScreen({ dateKey, entry, settings, onBack, onSave, onDelete }) {
           }
         );
         const visionData = await visionRes.json();
-        diaryText = visionData.responses?.[0]?.fullTextAnnotation?.text || "";
+        const rawVisionText = visionData.responses?.[0]?.fullTextAnnotation?.text || "";
+
+        if (rawVisionText) {
+          // Gemini로 1줄 요약
+          const summaryRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [{
+                    text: `아이가 쓴 일기 내용을 한 문장으로 따뜻하게 요약해줘. 반말로, 이모지 1개 포함해서.
+일기 내용: "${rawVisionText}"
+한 문장만 반환해줘.`
+                  }]
+                }],
+                generationConfig: { maxOutputTokens: 100 },
+              }),
+            }
+          );
+          const summaryData = await summaryRes.json();
+          diaryText = summaryData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || rawVisionText;
+        } else {
+          diaryText = rawVisionText;
+        }
         setText(diaryText);
       }
 
