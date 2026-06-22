@@ -240,58 +240,46 @@ function DiaryScreen({ dateKey, entry, settings, onBack, onSave, onDelete }) {
       const styleLabel = styleLabels[settings.style] || "수채화 스타일";
       const ageLabel = settings.age ? `${settings.age}세 아이가 쓴` : "아이가 쓴";
 
-      // Step 1: Gemini로 손글씨 인식 + 1줄 요약
+      // Gemini 1번 호출로 요약 + SVG 생성 동시에
       let diaryText = text;
-      if (photo && !text) {
-        const extractRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{
-                parts: [
-                  {
-                    inline_data: {
-                      mime_type: "image/jpeg",
-                      data: photo.split(",")[1],
-                    }
-                  },
-                  {
-                    text: `이 사진에서 아이가 쓴 글씨나 일기 내용을 정확하게 읽어서 핵심 내용을 유지하면서 한 문장으로 따뜻하게 표현해줘. 내용을 바꾸거나 다르게 해석하지 말고 원래 의미 그대로. 반말로, 이모지 1개 포함해서. 한 문장만 반환해줘.`
-                  }
-                ]
-              }],
-              generationConfig: { maxOutputTokens: 150 },
-            }),
-          }
-        );
-        const extractData = await extractRes.json();
-        console.log("Gemini 요약 응답:", JSON.stringify(extractData).slice(0, 200));
-        diaryText = extractData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-        setText(diaryText);
-      }
 
-      // Step 2: Gemini로 SVG 그림 생성
+      // 사진이 있고 텍스트가 없으면 이미지 포함해서 호출
+      const parts = [];
+      if (photo && !text) {
+        parts.push({
+          inline_data: {
+            mime_type: "image/jpeg",
+            data: photo.split(",")[1],
+          }
+        });
+      }
+      parts.push({
+        text: `${photo && !text ? 
+          "이 사진에서 일기나 글씨 내용만 읽어줘. 날짜, 숫자, 제목은 무시하고 일기의 본문 내용만 파악해줘." : 
+          `일기 내용: "${diaryText}"`
+        }
+
+다음 두 가지를 JSON으로 반환해줘:
+1. "summary": 일기 본문 내용을 핵심 의미 유지하면서 한 문장으로 따뜻하게 표현 (반말, 이모지 1개 포함)
+2. "svg": ${ageLabel} 일기 내용의 장소/행동/인물을 정확히 반영한 ${styleLabel} 귀여운 SVG 그림
+
+SVG 규칙:
+- viewBox="0 0 300 300" width="300" height="300"
+- 단순하고 심플하게 (그라디언트, 필터 최소화)
+- 반드시 </svg>로 닫을 것
+- 50줄 이내
+
+JSON 형식만 반환 (마크다운 없이):
+{"summary":"...","svg":"<svg>...</svg>"}`
+      });
+
       const geminiRes = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `${ageLabel} 일기 내용을 바탕으로 ${styleLabel}의 따뜻하고 귀여운 그림을 SVG로 만들어줘.
-                    일기 내용: "${diaryText || "오늘 즐거웠어요"}"
-                    규칙:
-                    - 일기 내용의 장소, 행동, 인물을 정확하게 그림에 반영할 것 (예: 책상이면 책상, 공원이면 공원)
-                    - SVG 태그만 반환 (다른 설명 없이, 마크다운 코드블록 없이)
-                    - viewBox="0 0 300 300" width="300" height="300"
-                    - 단순하고 심플하게 (그라디언트, 필터 최소화)
-                    - 반드시 </svg>로 닫을 것
-                    - 50줄 이내로`
-              }]
-            }],
+            contents: [{ parts }],
             generationConfig: { maxOutputTokens: 8192 },
           }),
         }
@@ -303,13 +291,32 @@ function DiaryScreen({ dateKey, entry, settings, onBack, onSave, onDelete }) {
         return;
       }
       const rawText = (geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "")
-        .replace(/```svg\n?|```xml\n?|```html\n?|```\n?/gi, "")
+        .replace(/```json\n?|```\n?/gi, "")
         .trim();
-      const svgStart = rawText.indexOf('<svg');
-      let svgContent = svgStart !== -1 ? rawText.slice(svgStart) : null;
-      if (svgContent && !svgContent.includes('</svg>')) {
-        svgContent = svgContent + '</svg>';
+      console.log("Gemini 응답:", rawText.slice(0, 200));
+
+      // JSON 파싱
+      let summary = "";
+      let svgContent = null;
+      try {
+        const parsed = JSON.parse(rawText);
+        summary = parsed.summary || "";
+        const svgRaw = parsed.svg || "";
+        const svgStart = svgRaw.indexOf('<svg');
+        svgContent = svgStart !== -1 ? svgRaw.slice(svgStart) : null;
+        if (svgContent && !svgContent.includes('</svg>')) {
+          svgContent = svgContent + '</svg>';
+        }
+      } catch {
+        // JSON 파싱 실패시 SVG만 추출 시도
+        const svgStart = rawText.indexOf('<svg');
+        svgContent = svgStart !== -1 ? rawText.slice(svgStart) : null;
+        if (svgContent && !svgContent.includes('</svg>')) {
+          svgContent = svgContent + '</svg>';
+        }
       }
+
+      if (summary) { diaryText = summary; setText(summary); }
       setGeneratedImg(svgContent);
       if (!svgContent) setError(`SVG 추출 실패. 응답: ${rawText.slice(0, 80)}`);
     } catch (e) {
