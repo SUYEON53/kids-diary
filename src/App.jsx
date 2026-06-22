@@ -258,7 +258,7 @@ function DiaryScreen({ dateKey, entry, settings, onBack, onSave, onDelete }) {
                     }
                   },
                   {
-                    text: `이 사진에서 아이가 쓴 글씨나 일기 내용을 읽어서 한 문장으로 따뜻하게 요약해줘. 반말로, 이모지 1개 포함해서. 한 문장만 반환해줘.`
+                    text: `이 사진에서 아이가 쓴 글씨나 일기 내용을 정확하게 읽어서 핵심 내용을 유지하면서 한 문장으로 따뜻하게 표현해줘. 내용을 바꾸거나 다르게 해석하지 말고 원래 의미 그대로. 반말로, 이모지 1개 포함해서. 한 문장만 반환해줘.`
                   }
                 ]
               }],
@@ -282,13 +282,14 @@ function DiaryScreen({ dateKey, entry, settings, onBack, onSave, onDelete }) {
             contents: [{
               parts: [{
                 text: `${ageLabel} 일기 내용을 바탕으로 ${styleLabel}의 따뜻하고 귀여운 그림을 SVG로 만들어줘.
-일기 내용: "${diaryText || "오늘 즐거웠어요"}"
-규칙:
-- SVG 태그만 반환 (다른 설명 없이, 마크다운 코드블록 없이)
-- viewBox="0 0 300 300" width="300" height="300"
-- 단순하고 심플하게 (그라디언트, 필터 최소화)
-- 반드시 </svg>로 닫을 것
-- 50줄 이내로`
+                    일기 내용: "${diaryText || "오늘 즐거웠어요"}"
+                    규칙:
+                    - 일기 내용의 장소, 행동, 인물을 정확하게 그림에 반영할 것 (예: 책상이면 책상, 공원이면 공원)
+                    - SVG 태그만 반환 (다른 설명 없이, 마크다운 코드블록 없이)
+                    - viewBox="0 0 300 300" width="300" height="300"
+                    - 단순하고 심플하게 (그라디언트, 필터 최소화)
+                    - 반드시 </svg>로 닫을 것
+                    - 50줄 이내로`
               }]
             }],
             generationConfig: { maxOutputTokens: 8192 },
